@@ -1,0 +1,51 @@
+{
+  "name": "insomnia-plugin-cors-doctor",
+  "version": "1.0.0",
+  "description": "Local-only Insomnia CORS diagnosis reports for browser-blocked API requests, preflight headers, wildcard credentials, and server-side fixes.",
+  "main": "main.js",
+  "license": "MIT",
+  "author": "oliviajohns5",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oliviajohns5/insomnia-plugin-cors-doctor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oliviajohns5/insomnia-plugin-cors-doctor/issues"
+  },
+  "homepage": "https://github.com/oliviajohns5/insomnia-plugin-cors-doctor#readme",
+  "keywords": [
+    "insomnia",
+    "insomnia-plugin",
+    "cors",
+    "preflight",
+    "headers",
+    "api-debugging",
+    "browser"
+  ],
+  "files": [
+    "main.js",
+    "README.md",
+    "LICENSE",
+    "icon.svg",
+    "cover.svg"
+  ],
+  "scripts": {
+    "test": "node test.js",
+    "test:packaged": "node qa-packaged.js",
+    "pack:dry": "npm pack --dry-run"
+  },
+  "insomnia": {
+    "name": "cors-doctor",
+    "displayName": "CORS Doctor",
+    "description": "Exports a local report that diagnoses browser CORS failures from request and response headers.",
+    "images": {
+      "icon": "icon.svg",
+      "cover": "cover.svg"
+    },
+    "publisher": {
+      "name": "oliviajohns5"
+    },
+    "unlisted": false
+  },
+  "devDependencies": {}
+}
