@@ -80,6 +80,12 @@ async function main() {
   assert(report.includes('wildcard-with-credentials'));
   assert(report.includes('## Copy-paste server-side fix'));
 
+  const missingMethods = t.diagnoseCors({
+    request: { method: 'PUT', headers: [{ name: 'Origin', value: 'https://app.example.com' }] },
+    responseHeaders: [['Access-Control-Allow-Origin', 'https://app.example.com'], ['Vary', 'Origin']],
+  });
+  assert(missingMethods.findings.some(f => f.type === 'missing-allow-methods'));
+
   const pasted = t.parsePastedHeaders('Access-Control-Allow-Origin: https://app.example.com\nVary: Origin');
   assert.deepStrictEqual(pasted[0], ['Access-Control-Allow-Origin', 'https://app.example.com']);
 

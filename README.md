@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/insomnia-plugin-cors-doctor.svg)](https://www.npmjs.com/package/insomnia-plugin-cors-doctor)
 [![license: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Local-only CORS diagnosis reports for Insomnia. CORS Doctor helps explain why a browser blocks a request even when Insomnia can send it.
+Local-only CORS diagnosis reports for Insomnia. v1.0.1 adds a hard-QA regression fix for non-simple methods when `Access-Control-Allow-Methods` is absent.
 
 ## Why
 
@@ -114,6 +114,7 @@ npm pack --dry-run
 - `node --check real-insomnia-packaged-test.js`
 - `node --check qa-packaged.js`
 - `npm test`
+- `npm run test:hard`
 - `npm run test:packaged`
 - `npm pack --dry-run`
 - isolated tarball install

@@ -1,6 +1,7 @@
 'use strict';
 
 const SIMPLE_REQUEST_HEADERS = new Set(['accept', 'accept-language', 'content-language', 'content-type']);
+const SIMPLE_METHODS = new Set(['GET', 'HEAD', 'POST']);
 const SIMPLE_CONTENT_TYPES = new Set(['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain']);
 const CORS_RESPONSE_HEADERS = [
   'access-control-allow-origin',
@@ -113,7 +114,9 @@ function diagnoseCors(input) {
     add(findings, 'high', 'wildcard-with-credentials', 'Wildcard origin cannot be used with credentials in browsers.', 'Access-Control-Allow-Origin: * + Access-Control-Allow-Credentials: true', 'Return the specific Origin value and include Vary: Origin.', 25);
   }
 
-  if (!['GET', 'HEAD'].includes(method) && allowMethods.length && !allowMethods.includes(method)) {
+  if (!SIMPLE_METHODS.has(method) && !allowMethods.length) {
+    add(findings, 'medium', 'missing-allow-methods', 'Response does not include Access-Control-Allow-Methods for a non-simple method.', method, `Return Access-Control-Allow-Methods including ${method}.`, 15);
+  } else if (!['GET', 'HEAD'].includes(method) && allowMethods.length && !allowMethods.includes(method)) {
     add(findings, 'medium', 'method-not-allowed', 'Requested method is not listed in Access-Control-Allow-Methods.', `${method}; allowed=${allowMethods.join(', ')}`, `Add ${method} to Access-Control-Allow-Methods.`, 15);
   }
 

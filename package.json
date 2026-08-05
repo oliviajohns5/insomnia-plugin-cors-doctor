@@ -1,6 +1,6 @@
 {
   "name": "insomnia-plugin-cors-doctor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Local-only Insomnia CORS diagnosis reports for browser-blocked API requests, preflight headers, wildcard credentials, and server-side fixes.",
   "main": "main.js",
   "license": "MIT",
@@ -31,6 +31,7 @@
   ],
   "scripts": {
     "test": "node test.js",
+    "test:hard": "node hard-qa.js",
     "test:packaged": "node qa-packaged.js",
     "pack:dry": "npm pack --dry-run"
   },
