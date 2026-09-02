@@ -15,6 +15,7 @@ const sample = {
       { name: 'Origin', value: 'https://app.example.com' },
       { name: 'Authorization', value: 'Bearer demo' },
       { name: 'X-Client-Version', value: '1.2.3' },
+      { name: 'Access-Control-Request-Private-Network', value: 'true' },
     ],
   },
   responseHeaders: [
@@ -51,11 +52,11 @@ async function main() {
 
   const diagnosis = t.diagnoseCors(sample);
   const types = new Set(diagnosis.findings.map(f => f.type));
-  for (const expected of ['wildcard-with-credentials', 'method-not-allowed', 'headers-not-allowed', 'missing-vary-origin']) {
+  for (const expected of ['wildcard-with-credentials', 'method-not-allowed', 'headers-not-allowed', 'missing-vary-origin', 'private-network-not-allowed']) {
     assert(types.has(expected), expected);
   }
   assert.strictEqual(diagnosis.status, 'fail');
-  assert.strictEqual(diagnosis.score, 30);
+  assert.strictEqual(diagnosis.score, 15);
   assert(diagnosis.requestedHeaders.includes('authorization'));
   assert(diagnosis.requestedHeaders.includes('x-client-version'));
 
@@ -75,7 +76,7 @@ async function main() {
   const report = t.makeMarkdown(diagnosis);
   assert(report.includes('# Insomnia CORS Doctor Report'));
   assert(report.includes('CORS result: fail'));
-  assert(report.includes('Quality score: 30/100'));
+  assert(report.includes('Quality score: 15/100'));
   assert(report.includes('## Browser-facing explanation'));
   assert(report.includes('wildcard-with-credentials'));
   assert(report.includes('## Copy-paste server-side fix'));

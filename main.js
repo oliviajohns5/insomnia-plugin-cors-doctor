@@ -10,6 +10,7 @@ const CORS_RESPONSE_HEADERS = [
   'access-control-allow-headers',
   'access-control-expose-headers',
   'access-control-max-age',
+  'access-control-allow-private-network',
   'vary',
 ];
 
@@ -101,6 +102,8 @@ function diagnoseCors(input) {
   const allowCreds = headerValue(resHeaders, 'access-control-allow-credentials').toLowerCase();
   const allowMethods = splitHeaderList(headerValue(resHeaders, 'access-control-allow-methods')).map(m => m.toUpperCase());
   const allowHeaders = splitHeaderList(headerValue(resHeaders, 'access-control-allow-headers'));
+  const allowPrivateNetwork = headerValue(resHeaders, 'access-control-allow-private-network').toLowerCase();
+  const privateNetworkRequested = headerValue(reqHeaders, 'access-control-request-private-network').toLowerCase() === 'true';
   const vary = splitHeaderList(headerValue(resHeaders, 'vary'));
   const findings = [];
 
@@ -128,6 +131,10 @@ function diagnoseCors(input) {
   const contentType = headerValue(reqHeaders, 'content-type').split(';')[0].trim().toLowerCase();
   if (contentType && !SIMPLE_CONTENT_TYPES.has(contentType) && !allowHeaders.includes('content-type')) {
     add(findings, 'medium', 'content-type-not-allowed', 'Non-simple Content-Type usually requires Access-Control-Allow-Headers: Content-Type.', contentType, 'Add Content-Type to Access-Control-Allow-Headers.', 10);
+  }
+
+  if (privateNetworkRequested && allowPrivateNetwork !== 'true') {
+    add(findings, 'medium', 'private-network-not-allowed', 'Private Network Access preflight is requested but not allowed by the response.', 'Access-Control-Request-Private-Network: true', 'Return Access-Control-Allow-Private-Network: true only for trusted origins that should reach private network resources.', 15);
   }
 
   if (allowOrigin && allowOrigin !== '*' && !vary.includes('origin')) {
@@ -163,6 +170,7 @@ function makeServerFix(diagnosis) {
     `Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS${method && !['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'].includes(method) ? ', ' + method : ''}`,
     `Access-Control-Allow-Headers: ${headers}`,
     'Vary: Origin',
+    'Access-Control-Allow-Private-Network: true',
     '```',
   ].join('\n');
 }

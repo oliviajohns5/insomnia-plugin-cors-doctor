@@ -129,3 +129,9 @@ npm pack --dry-run
 ## License
 
 MIT
+
+## Changelog
+
+### 1.0.2
+
+- Adds Private Network Access preflight diagnostics for Access-Control-Request-Private-Network.
