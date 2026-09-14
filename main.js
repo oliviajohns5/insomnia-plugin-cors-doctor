@@ -80,11 +80,24 @@ function requestOrigin(requestHeadersMap) {
   return headerValue(requestHeadersMap, 'origin');
 }
 
+function uniqueSorted(values) {
+  return Array.from(new Set(values.map(normalizeName).filter(Boolean))).sort();
+}
+
+function requestedMethod(input, requestHeadersMap) {
+  const preflightMethod = headerValue(requestHeadersMap, 'access-control-request-method').trim().toUpperCase();
+  if (preflightMethod) return preflightMethod;
+  const request = (input && input.request) || {};
+  return safeString(request.method || (input && input.method) || 'GET').toUpperCase();
+}
+
 function requestedHeaderNames(requestHeadersMap) {
-  return Object.keys(requestHeadersMap)
+  const preflightHeaders = splitHeaderList(headerValue(requestHeadersMap, 'access-control-request-headers'));
+  if (preflightHeaders.length) return uniqueSorted(preflightHeaders);
+  return uniqueSorted(Object.keys(requestHeadersMap)
     .filter(h => !SIMPLE_REQUEST_HEADERS.has(h))
-    .filter(h => !['origin', 'host', 'content-length', 'user-agent', 'accept-encoding', 'connection'].includes(h))
-    .sort();
+    .filter(h => !h.startsWith('access-control-request-'))
+    .filter(h => !['origin', 'host', 'content-length', 'user-agent', 'accept-encoding', 'connection'].includes(h)));
 }
 
 function add(findings, severity, type, message, preview, fix, penalty) {
@@ -95,7 +108,7 @@ function diagnoseCors(input) {
   const request = input.request || {};
   const reqHeaders = requestHeaders(request);
   const resHeaders = responseHeaders(input);
-  const method = safeString(request.method || input.method || 'GET').toUpperCase();
+  const method = requestedMethod(input, reqHeaders);
   const origin = requestOrigin(reqHeaders) || safeString(input.origin || '');
   const requestedHeaders = requestedHeaderNames(reqHeaders);
   const allowOrigin = headerValue(resHeaders, 'access-control-allow-origin');
@@ -154,6 +167,7 @@ function diagnoseCors(input) {
     method,
     origin,
     requestedHeaders,
+    privateNetworkRequested,
     responseCorsHeaders: Object.fromEntries(Object.entries(resHeaders).filter(([k]) => CORS_RESPONSE_HEADERS.includes(k))),
     findings,
   };
@@ -163,16 +177,17 @@ function makeServerFix(diagnosis) {
   const origin = diagnosis.origin || 'https://your-frontend.example';
   const method = diagnosis.method || 'GET';
   const headers = diagnosis.requestedHeaders.length ? diagnosis.requestedHeaders.join(', ') : 'Content-Type, Authorization';
-  return [
+  const lines = [
     '```http',
     `Access-Control-Allow-Origin: ${origin}`,
     'Access-Control-Allow-Credentials: true',
     `Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS${method && !['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'].includes(method) ? ', ' + method : ''}`,
     `Access-Control-Allow-Headers: ${headers}`,
     'Vary: Origin',
-    'Access-Control-Allow-Private-Network: true',
-    '```',
-  ].join('\n');
+  ];
+  if (diagnosis.privateNetworkRequested) lines.push('Access-Control-Allow-Private-Network: true');
+  lines.push('```');
+  return lines.join('\n');
 }
 
 function makeMarkdown(diagnosis) {
@@ -222,4 +237,4 @@ const action = {
 module.exports.workspaceActions = [action];
 module.exports.requestGroupActions = [action];
 module.exports.requestActions = [action];
-module.exports.__test = { collectInput, diagnoseCors, getWritableExportPath, headerValue, makeMarkdown, normalizeHeaders, parsePastedHeaders, requestedHeaderNames, splitHeaderList };
+module.exports.__test = { collectInput, diagnoseCors, getWritableExportPath, headerValue, makeMarkdown, normalizeHeaders, parsePastedHeaders, requestedHeaderNames, requestedMethod, splitHeaderList, uniqueSorted };

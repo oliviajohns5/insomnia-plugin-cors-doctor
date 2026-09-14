@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/insomnia-plugin-cors-doctor.svg)](https://www.npmjs.com/package/insomnia-plugin-cors-doctor)
 [![license: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Local-only CORS diagnosis reports for Insomnia. v1.0.1 adds a hard-QA regression fix for non-simple methods when `Access-Control-Allow-Methods` is absent.
+Local-only CORS diagnosis reports for Insomnia. v1.0.3 semantically parses browser preflight request headers and only recommends Private Network Access response headers when requested.
 
 ## Why
 
@@ -11,9 +11,9 @@ CORS failures are common and confusing because the request can work in API clien
 
 ## Features
 
-- Diagnoses `Access-Control-Allow-Origin`, credentials, methods, headers, and `Vary: Origin`
+- Diagnoses `Access-Control-Allow-Origin`, credentials, methods, headers, Private Network Access, and `Vary: Origin`
 - Flags wildcard origin + credentials
-- Flags missing allowed methods and headers
+- Flags missing allowed methods and headers, including semantic `Access-Control-Request-Method` and `Access-Control-Request-Headers` preflight checks
 - Flags missing `Vary: Origin` for dynamic origins
 - Explains the likely browser-facing problem
 - Includes copy-paste server-side header examples
@@ -131,6 +131,11 @@ npm pack --dry-run
 MIT
 
 ## Changelog
+
+### 1.0.3
+
+- Parses preflight `Access-Control-Request-Method` and `Access-Control-Request-Headers` as the requested browser method/header set.
+- Recommends `Access-Control-Allow-Private-Network` only when `Access-Control-Request-Private-Network: true` is present.
 
 ### 1.0.2
 

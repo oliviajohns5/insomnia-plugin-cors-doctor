@@ -98,6 +98,43 @@ async function run() {
     assert(hasType(d, 'method-not-allowed'));
   });
 
+  await check('preflight request method overrides OPTIONS transport method', () => {
+    const d = diag({
+      request: { method: 'OPTIONS', headers: [{ name: 'Origin', value: 'https://app.example.com' }, { name: 'Access-Control-Request-Method', value: 'DELETE' }] },
+      responseHeaders: [['Access-Control-Allow-Origin', 'https://app.example.com'], ['Access-Control-Allow-Methods', 'GET, POST'], ['Vary', 'Origin']],
+    });
+    assert.strictEqual(d.method, 'DELETE');
+    assert(hasType(d, 'method-not-allowed'));
+  });
+
+  await check('preflight request headers define the semantic requested header set', () => {
+    const d = diag({
+      request: { method: 'OPTIONS', headers: [
+        { name: 'Origin', value: 'https://app.example.com' },
+        { name: 'Authorization', value: 'Bearer actual header should not be needed when ACRH exists' },
+        { name: 'Access-Control-Request-Headers', value: 'X-Trace-Id, Authorization, x-trace-id' },
+      ] },
+      responseHeaders: [['Access-Control-Allow-Origin', 'https://app.example.com'], ['Access-Control-Allow-Headers', 'Authorization'], ['Vary', 'Origin']],
+    });
+    assert.deepStrictEqual(d.requestedHeaders, ['authorization', 'x-trace-id']);
+    assert(hasType(d, 'headers-not-allowed'));
+    assert(d.findings.some(f => f.type === 'headers-not-allowed' && f.preview === 'x-trace-id'));
+  });
+
+  await check('server fix includes Private Network Access only when preflight requested it', () => {
+    const normal = diag({
+      request: { method: 'GET', headers: [{ name: 'Origin', value: 'https://app.example.com' }] },
+      responseHeaders: [['Access-Control-Allow-Origin', 'https://app.example.com'], ['Vary', 'Origin']],
+    });
+    assert(!t.makeMarkdown(normal).includes('Access-Control-Allow-Private-Network: true'));
+    const pna = diag({
+      request: { method: 'GET', headers: [{ name: 'Origin', value: 'https://app.example.com' }, { name: 'Access-Control-Request-Private-Network', value: 'true' }] },
+      responseHeaders: [['Access-Control-Allow-Origin', 'https://app.example.com'], ['Vary', 'Origin']],
+    });
+    assert(hasType(pna, 'private-network-not-allowed'));
+    assert(t.makeMarkdown(pna).includes('Access-Control-Allow-Private-Network: true'));
+  });
+
   await check('custom headers with absent allow-headers are flagged', () => {
     const d = diag({
       request: { method: 'POST', headers: [{ name: 'Origin', value: 'https://app.example.com' }, { name: 'X-Client-Version', value: '1' }] },

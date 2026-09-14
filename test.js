@@ -73,6 +73,36 @@ async function main() {
   assert.strictEqual(good.status, 'pass');
   assert.strictEqual(good.findings.length, 0);
 
+  const preflight = t.diagnoseCors({
+    request: {
+      method: 'OPTIONS',
+      headers: [
+        { name: 'Origin', value: 'https://app.example.com' },
+        { name: 'Access-Control-Request-Method', value: 'PATCH' },
+        { name: 'Access-Control-Request-Headers', value: 'X-Client-Version, Authorization, x-client-version' },
+      ],
+    },
+    responseHeaders: [
+      ['Access-Control-Allow-Origin', 'https://app.example.com'],
+      ['Access-Control-Allow-Methods', 'GET, POST'],
+      ['Access-Control-Allow-Headers', 'Authorization'],
+      ['Vary', 'Origin'],
+    ],
+  });
+  assert.strictEqual(preflight.method, 'PATCH');
+  assert.deepStrictEqual(preflight.requestedHeaders, ['authorization', 'x-client-version']);
+  assert(preflight.findings.some(f => f.type === 'method-not-allowed'));
+  assert(preflight.findings.some(f => f.type === 'headers-not-allowed' && f.preview === 'x-client-version'));
+
+  const noPna = t.makeMarkdown(good);
+  assert(!noPna.includes('Access-Control-Allow-Private-Network: true'));
+  const pna = t.diagnoseCors({
+    request: { method: 'GET', headers: [{ name: 'Origin', value: 'https://app.example.com' }, { name: 'Access-Control-Request-Private-Network', value: 'true' }] },
+    responseHeaders: [['Access-Control-Allow-Origin', 'https://app.example.com'], ['Vary', 'Origin']],
+  });
+  assert(pna.privateNetworkRequested);
+  assert(t.makeMarkdown(pna).includes('Access-Control-Allow-Private-Network: true'));
+
   const report = t.makeMarkdown(diagnosis);
   assert(report.includes('# Insomnia CORS Doctor Report'));
   assert(report.includes('CORS result: fail'));
