@@ -209,6 +209,18 @@ async function getWritableExportPath(context, fileName) {
   return path.join(candidates.find(Boolean) || '.', fileName);
 }
 
+
+function normalizeSaveDialogResult(result) {
+  if (!result) return null;
+  if (typeof result === 'string') return result;
+  if (typeof result === 'object') {
+    if (result.canceled) return null;
+    if (typeof result.filePath === 'string' && result.filePath) return result.filePath;
+    if (typeof result.path === 'string' && result.path) return result.path;
+  }
+  return null;
+}
+
 async function collectInput(context) {
   const request = context.request || {};
   let headers = (context.response && context.response.headers) || context.responseHeaders || [];
@@ -227,7 +239,7 @@ const action = {
     const report = makeMarkdown(diagnoseCors(input));
     const fs = require('fs');
     let output = null;
-    if (context.app && typeof context.app.showSaveDialog === 'function') output = await context.app.showSaveDialog({ defaultPath: 'insomnia-cors-doctor-report.md' });
+    if (context.app && typeof context.app.showSaveDialog === 'function') output = normalizeSaveDialogResult(await context.app.showSaveDialog({ defaultPath: 'insomnia-cors-doctor-report.md' }));
     if (!output) output = await getWritableExportPath(context, 'insomnia-cors-doctor-report.md');
     fs.writeFileSync(output, report, 'utf8');
     if (context.app && typeof context.app.alert === 'function') await context.app.alert('CORS Doctor report exported', output);
@@ -237,4 +249,4 @@ const action = {
 module.exports.workspaceActions = [action];
 module.exports.requestGroupActions = [action];
 module.exports.requestActions = [action];
-module.exports.__test = { collectInput, diagnoseCors, getWritableExportPath, headerValue, makeMarkdown, normalizeHeaders, parsePastedHeaders, requestedHeaderNames, requestedMethod, splitHeaderList, uniqueSorted };
+module.exports.__test = { collectInput, diagnoseCors, getWritableExportPath, headerValue, makeMarkdown, normalizeHeaders, normalizeSaveDialogResult, parsePastedHeaders, requestedHeaderNames, requestedMethod, splitHeaderList, uniqueSorted };

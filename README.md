@@ -132,6 +132,11 @@ MIT
 
 ## Changelog
 
+### 1.0.4
+
+- Report export now supports Electron-style save dialog results returned by newer Insomnia contexts.
+
+
 ### 1.0.3
 
 - Parses preflight `Access-Control-Request-Method` and `Access-Control-Request-Headers` as the requested browser method/header set.

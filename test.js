@@ -103,6 +103,10 @@ async function main() {
   assert(pna.privateNetworkRequested);
   assert(t.makeMarkdown(pna).includes('Access-Control-Allow-Private-Network: true'));
 
+  assert.strictEqual(t.normalizeSaveDialogResult('/tmp/report.md'), '/tmp/report.md');
+  assert.strictEqual(t.normalizeSaveDialogResult({ filePath: '/tmp/report.md', canceled: false }), '/tmp/report.md');
+  assert.strictEqual(t.normalizeSaveDialogResult({ canceled: true }), null);
+
   const report = t.makeMarkdown(diagnosis);
   assert(report.includes('# Insomnia CORS Doctor Report'));
   assert(report.includes('CORS result: fail'));
@@ -131,6 +135,9 @@ async function main() {
       assert(text.includes('wildcard-with-credentials'));
       assert.strictEqual(ctx.alerts.length, 1);
     }
+    const objectOut = path.join(tmp, 'object.md');
+    await plugin.requestActions[0].action(contextFor({ filePath: objectOut, canceled: false }));
+    assert(fs.readFileSync(objectOut, 'utf8').includes('Insomnia CORS Doctor Report'), 'object save dialog result writes report');
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
