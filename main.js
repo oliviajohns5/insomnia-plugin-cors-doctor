@@ -239,8 +239,12 @@ const action = {
     const report = makeMarkdown(diagnoseCors(input));
     const fs = require('fs');
     let output = null;
-    if (context.app && typeof context.app.showSaveDialog === 'function') output = normalizeSaveDialogResult(await context.app.showSaveDialog({ defaultPath: 'insomnia-cors-doctor-report.md' }));
-    if (!output) output = await getWritableExportPath(context, 'insomnia-cors-doctor-report.md');
+    if (context.app && typeof context.app.showSaveDialog === 'function') {
+      output = normalizeSaveDialogResult(await context.app.showSaveDialog({ defaultPath: 'insomnia-cors-doctor-report.md' }));
+      if (!output) return;
+    } else {
+      output = await getWritableExportPath(context, 'insomnia-cors-doctor-report.md');
+    }
     fs.writeFileSync(output, report, 'utf8');
     if (context.app && typeof context.app.alert === 'function') await context.app.alert('CORS Doctor report exported', output);
   },

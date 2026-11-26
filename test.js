@@ -138,6 +138,34 @@ async function main() {
     const objectOut = path.join(tmp, 'object.md');
     await plugin.requestActions[0].action(contextFor({ filePath: objectOut, canceled: false }));
     assert(fs.readFileSync(objectOut, 'utf8').includes('Insomnia CORS Doctor Report'), 'object save dialog result writes report');
+
+    for (const [actionName, action] of [
+      ['workspace', plugin.workspaceActions[0]],
+      ['request group', plugin.requestGroupActions[0]],
+      ['request', plugin.requestActions[0]],
+    ]) {
+      const actionTmp = path.join(tmp, actionName.replace(' ', '-'));
+      fs.mkdirSync(actionTmp);
+      for (const [resultName, result] of [
+        ['canceled with path', { canceled: true, filePath: path.join(actionTmp, 'canceled.md') }],
+        ['null', null],
+        ['undefined', undefined],
+      ]) {
+        const ctx = contextFor(result);
+        ctx.app.getPath = async () => actionTmp;
+        const before = fs.readdirSync(actionTmp);
+        await action.action(ctx);
+        assert.deepStrictEqual(fs.readdirSync(actionTmp), before, `${actionName}: ${resultName} must not write any file`);
+        assert.strictEqual(ctx.alerts.length, 0, `${actionName}: ${resultName} must not alert success`);
+      }
+
+      const fallback = contextFor(undefined);
+      delete fallback.app.showSaveDialog;
+      fallback.app.getPath = async () => actionTmp;
+      await action.action(fallback);
+      assert(fs.readFileSync(path.join(actionTmp, 'insomnia-cors-doctor-report.md'), 'utf8').includes('Insomnia CORS Doctor Report'), `${actionName}: missing dialog API writes fallback report`);
+      assert.strictEqual(fallback.alerts.length, 1, `${actionName}: missing dialog API alerts success`);
+    }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
